@@ -1,0 +1,23 @@
+{
+  "name": "express-cassandra-session-store",
+  "version": "1.0.0",
+  "description": "cassandra session store for express",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xmhscratch/express-cassandra-session-store.git"
+  },
+  "author": "xmhscratch",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xmhscratch/express-cassandra-session-store/issues"
+  },
+  "homepage": "https://github.com/xmhscratch/express-cassandra-session-store#readme",
+  "dependencies": {
+    "cassandra-driver": "^3.2.2",
+    "express-session": "^1.15.4"
+  }
+}
