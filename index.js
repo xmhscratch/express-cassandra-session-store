@@ -10,9 +10,9 @@
  * @private
  */
 
-const Store = require('express-session/store')
 const util = require('util')
 const debug = util.debuglog('cassandra-store')
+const { Store } = require('express-session')
 
 /**
  * Shim setImmediate for node.js < 0.10
