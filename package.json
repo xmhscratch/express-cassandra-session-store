@@ -17,7 +17,12 @@
   },
   "homepage": "https://github.com/xmhscratch/express-cassandra-session-store#readme",
   "dependencies": {
+    "async": "^2.5.0",
     "cassandra-driver": "^3.2.2",
+    "express-session": "^1.15.4"
+  },
+  "devDependencies": {
+    "express": "^4.15.3",
     "express-session": "^1.15.4"
   }
 }
