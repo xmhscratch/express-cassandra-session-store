@@ -242,7 +242,7 @@ CassandraStore.prototype.touch = function touch(sessionId, session, callback) {
 }
 
 /**
- * Get session from the store.
+ * Destroy session from the store.
  * @private
  */
 
@@ -264,7 +264,7 @@ function destroySession(sessionId, callback) {
 }
 
 /**
- * Get session from the store.
+ * Update session from the store.
  * @private
  */
 
