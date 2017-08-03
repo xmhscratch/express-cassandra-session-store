@@ -120,29 +120,6 @@ function CassandraStore(options) {
 util.inherits(CassandraStore, Store)
 
 /**
- * Get all active sessions.
- *
- * @param {function} callback
- * @public
- */
-
-// CassandraStore.prototype.all = function all(callback) {
-//     var sessionIds = Object.keys(this.sessions)
-//     var sessions = Object.create(null)
-
-//     for (var i = 0; i < sessionIds.length; i++) {
-//         var sessionId = sessionIds[i]
-//         var session = getSession.call(this, sessionId)
-
-//         if (session) {
-//             sessions[sessionId] = session
-//         }
-//     }
-
-//     callback && defer(callback, null, sessions)
-// }
-
-/**
  * Clear all sessions.
  *
  * @param {function} callback
@@ -162,9 +139,6 @@ CassandraStore.prototype.clear = function clear(callback) {
     ).then((results) => {
         callback && defer(callback)
     })
-
-    // this.sessions = Object.create(null)
-    // callback && defer(callback)
 }
 
 /**
@@ -176,8 +150,6 @@ CassandraStore.prototype.clear = function clear(callback) {
 
 CassandraStore.prototype.destroy = function destroy(sessionId, callback) {
     destroySession.call(this, sessionId, callback)
-    // delete this.sessions[sessionId]
-    // callback && defer(callback)
 }
 
 /**
@@ -189,7 +161,6 @@ CassandraStore.prototype.destroy = function destroy(sessionId, callback) {
  */
 
 CassandraStore.prototype.get = function get(sessionId, callback) {
-    console.log(sessionId)
     const {
         cqlsh,
         defaultKeyspace,
@@ -197,10 +168,8 @@ CassandraStore.prototype.get = function get(sessionId, callback) {
     } = this
 
     getSession.call(this, sessionId, (error, session) => {
-        callback && defer(callback, error)
+        callback && defer(callback, error, session)
     })
-
-    // defer(callback, null, getSession.call(this, sessionId, callback))
 }
 
 /**
@@ -213,10 +182,7 @@ CassandraStore.prototype.get = function get(sessionId, callback) {
  */
 
 CassandraStore.prototype.set = function set(sessionId, session, callback) {
-    createSession.call(this, sessionId, session, callback)
-
-    // this.sessions[sessionId] = JSON.stringify(session)
-    // callback && defer(callback)
+    upsertSession.call(this, sessionId, session, callback)
 }
 
 /**
@@ -242,19 +208,10 @@ CassandraStore.prototype.length = function length(callback) {
     ).then((results) => {
         const { count } = results.rows[0]
 
-        callback && defer(() => {
-            callback(null, count)
-        })
+        callback && defer(() => callback(null, count))
     }).catch((error) => {
-        if (error) {
-            return callback(error)
-        }
+        callback && defer(callback, error)
     })
-
-    // this.all(function(err, sessions) {
-    //     if (err) return callback(err)
-    //     callback(null, Object.keys(sessions).length)
-    // })
 }
 
 /**
@@ -276,9 +233,8 @@ CassandraStore.prototype.touch = function touch(sessionId, session, callback) {
         if (currentSession) {
             // update expiration
             currentSession.cookie = session.cookie
-            createSession.call(this, sessionId, currentSession, callback)
+            upsertSession.call(this, sessionId, currentSession, callback)
             return
-            // this.sessions[sessionId] = JSON.stringify(currentSession)
         }
 
         callback && defer(callback)
@@ -302,6 +258,8 @@ function destroySession(sessionId, callback) {
         [sessionId]
     ).then((results) => {
         callback && defer(callback)
+    }).catch((error) => {
+        callback && defer(callback, error)
     })
 }
 
@@ -310,7 +268,7 @@ function destroySession(sessionId, callback) {
  * @private
  */
 
-function createSession(sessionId, session, callback) {
+function upsertSession(sessionId, session, callback) {
     const {
         cqlsh,
         defaultKeyspace,
@@ -325,6 +283,8 @@ function createSession(sessionId, session, callback) {
         ;`, [sessionId, JSON.stringify(session)]
     ).then((results) => {
         callback && defer(callback)
+    }).catch((error) => {
+        callback && defer(callback, error)
     })
 }
 
@@ -340,13 +300,6 @@ function getSession(sessionId, callback) {
         tableName
     } = this
 
-    const defaultSession = {
-        cookie: {
-            expires: new Date(),
-            originalMaxAge: null
-        }
-    }
-
     cqlsh.execute(`
         SELECT * FROM ${defaultKeyspace}.${tableName} WHERE sid = ?;`,
         [sessionId]
@@ -354,16 +307,23 @@ function getSession(sessionId, callback) {
         let record = results.rows[0]
 
         if (!record) {
-            callback()
+            callback && defer(callback)
             return
         }
 
         let { session } = record
-        let expires = session && session.cookie
-            ? (typeof session.cookie.expires === 'string'
-                ? new Date(session.cookie.expires)
-                : session.cookie.expires)
-            : null
+
+        if (!session) {
+            callback && defer(callback)
+            return
+        }
+
+        // parse
+        session = JSON.parse(session)
+
+        let expires = typeof session.cookie.expires === 'string'
+            ? new Date(session.cookie.expires)
+            : session.cookie.expires
 
         // destroy expired session
         if (expires && expires <= Date.now()) {
@@ -371,30 +331,8 @@ function getSession(sessionId, callback) {
             return
         }
 
-        callback(null, session)
-        return
+        callback && defer(callback, null, session)
     }).catch((error) => {
-        callback(error)
+        callback && defer(callback, error)
     })
-
-    // var sess = this.sessions[sessionId]
-
-    // if (!sess) {
-    //     return
-    // }
-
-    // // parse
-    // sess = JSON.parse(sess)
-
-    // var expires = typeof sess.cookie.expires === 'string' ?
-    //     new Date(sess.cookie.expires) :
-    //     sess.cookie.expires
-
-    // // destroy expired session
-    // if (expires && expires <= Date.now()) {
-    //     delete this.sessions[sessionId]
-    //     return
-    // }
-
-    // return sess
 }
