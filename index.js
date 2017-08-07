@@ -18,6 +18,8 @@ const { Store } = require('express-session')
 const async = require('async')
 const cassandra = require('cassandra-driver')
 
+var cqlsh
+
 /**
  * Shim setImmediate for node.js < 0.10
  * @private
@@ -58,7 +60,7 @@ function CassandraStore(options) {
 
     this.sessions = {}
 
-    const cqlsh = new cassandra.Client(clientOptions)
+    cqlsh = new cassandra.Client(clientOptions)
 
     const tableName = options.tableName || 'clients'
     const defaultKeyspace = options.keyspace || 'session'
@@ -108,7 +110,6 @@ function CassandraStore(options) {
         debug(`${className} [${level}]: ${message} (${furtherInfo})`)
     })
 
-    this.cqlsh = cqlsh
     this.tableName = tableName
     this.defaultKeyspace = defaultKeyspace
 }
@@ -128,7 +129,6 @@ util.inherits(CassandraStore, Store)
 
 CassandraStore.prototype.clear = function clear(callback) {
     const {
-        cqlsh,
         defaultKeyspace,
         tableName
     } = this
@@ -162,7 +162,6 @@ CassandraStore.prototype.destroy = function destroy(sessionId, callback) {
 
 CassandraStore.prototype.get = function get(sessionId, callback) {
     const {
-        cqlsh,
         defaultKeyspace,
         tableName
     } = this
@@ -194,7 +193,6 @@ CassandraStore.prototype.set = function set(sessionId, session, callback) {
 
 CassandraStore.prototype.length = function length(callback) {
     const {
-        cqlsh,
         defaultKeyspace,
         tableName
     } = this
@@ -248,7 +246,6 @@ CassandraStore.prototype.touch = function touch(sessionId, session, callback) {
 
 function destroySession(sessionId, callback) {
     const {
-        cqlsh,
         defaultKeyspace,
         tableName
     } = this
@@ -270,7 +267,6 @@ function destroySession(sessionId, callback) {
 
 function upsertSession(sessionId, session, callback) {
     const {
-        cqlsh,
         defaultKeyspace,
         tableName
     } = this
@@ -295,7 +291,6 @@ function upsertSession(sessionId, session, callback) {
 
 function getSession(sessionId, callback) {
     const {
-        cqlsh,
         defaultKeyspace,
         tableName
     } = this
