@@ -17,6 +17,7 @@ const debug = util.debuglog('express-cassandra-session-store')
 const { Store } = require('express-session')
 const async = require('async')
 const cassandra = require('cassandra-driver')
+const { PlainTextAuthProvider } = cassandra.auth
 
 var cqlsh
 
@@ -48,6 +49,9 @@ function CassandraStore(options) {
 
     const clientOptions = Object.assign({
         contactPoints: ['127.0.0.1'],
+        authProvider: new PlainTextAuthProvider(
+            'cassandra', 'cassandra'
+        ),
         queryOptions: { prepare: true }
     }, options.clientOptions || {})
 
@@ -59,7 +63,6 @@ function CassandraStore(options) {
     }, options)
 
     this.sessions = {}
-
     cqlsh = new cassandra.Client(clientOptions)
 
     const tableName = options.tableName || 'clients'
@@ -67,7 +70,7 @@ function CassandraStore(options) {
 
     cqlsh.connect((error) => {
         if (error) {
-            debug(error)
+            return debug(error)
         }
 
         async.series([
